@@ -72,7 +72,7 @@ Bu proje, mikroservis mimarisinin temel prensiplerini uygulamalı olarak göster
     ```
 
 2.  **`.env` Dosyasını Oluşturun ve Yapılandırın:**
-    Proje kök dizininde `.env.example` adındaki dosyayı, `.env` olarak değiştirin ve aşağıdakine benzer bir içerikle doldurun. **Çzellikle şifreleri kendi güvenli değerlerinizle değiştirin**:
+    Proje kök dizininde `.env.example` adındaki dosyayı, `.env` olarak değiştirin ve aşağıdakine benzer bir içerikle doldurun. **Özellikle şifreleri kendi güvenli değerlerinizle değiştirin**:
 
     ```dotenv
     # Proje Kök Dizinindeki .env Dosyası
