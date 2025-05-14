@@ -1,0 +1,21 @@
+# .gitignore
+# Python Sanal Ortamı
+venv/
+/venv/
+.venv/
+*/venv/
+*/.venv/
+
+# Python Cache ve Derlenmiş Dosyalar
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*$py.class
+
+# IDE ve Editör Dosyaları 
+.vscode/
+*.code-workspace
+
+# İşletim Sistemi Dosyaları 
+.DS_Store

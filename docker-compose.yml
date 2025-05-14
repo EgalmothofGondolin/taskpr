@@ -1,0 +1,158 @@
+version: '3.8'
+
+services:
+  user_service:
+    build: ./user_service
+    container_name: user_service_app
+    # env_file: ./user_service/.env # Bu satırı kaldırın veya sadece gerçekten servise özel değişkenler için bırakın
+    environment: # Kök .env'den gelenleri ve spesifik olanları burada tanımlayın
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${USER_SERVICE_DB_NAME}
+      SECRET_KEY: ${USER_SERVICE_SECRET_KEY}
+      ALGORITHM: ${USER_SERVICE_ALGORITHM}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${USER_SERVICE_ACCESS_TOKEN_EXPIRE_MINUTES}
+      FIRST_SUPERUSER_USERNAME: ${FIRST_SUPERUSER_USERNAME}
+      FIRST_SUPERUSER_PASSWORD: ${FIRST_SUPERUSER_PASSWORD}
+      FIRST_SUPERUSER_EMAIL: ${FIRST_SUPERUSER_EMAIL}
+      REDIS_HOST: ${USER_SERVICE_REDIS_HOST}
+      REDIS_PORT: ${USER_SERVICE_REDIS_PORT}
+      REDIS_BLACKLIST_DB: ${USER_SERVICE_REDIS_BLACKLIST_DB}
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./user_service/app:/app # Geliştirme için iyi, production'da dikkatli olun
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  product_service:
+    build: ./product_service
+    container_name: product_service_app
+    # env_file: ./product_service/.env # Bu satırı kaldırın
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${PRODUCT_SERVICE_DB_NAME}
+      SECRET_KEY: ${PRODUCT_SERVICE_SECRET_KEY}
+      ALGORITHM: ${PRODUCT_SERVICE_ALGORITHM}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${PRODUCT_SERVICE_ACCESS_TOKEN_EXPIRE_MINUTES}
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "8001:8001"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./product_service/app:/app # Geliştirme için iyi
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  frontend_streamlit:
+    build: ./frontend_streamlit
+    container_name: frontend_app
+    ports:
+      - "8501:8501"
+    environment:
+      USER_SERVICE_BASE_URL: http://user_service:8000
+      PRODUCT_SERVICE_BASE_URL: http://product_service:8001
+    volumes:
+      - ./frontend_streamlit:/app # Geliştirme için iyi
+    networks:
+      - app_network
+    depends_on:
+      - user_service
+      - product_service
+    restart: unless-stopped
+
+  redis:
+    image: redis:6-alpine
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  db:
+    image: postgres:13-alpine
+    container_name: postgres_db
+    environment:
+      # Bu POSTGRES_DB, PostgreSQL'in içinde varsayılan olarak oluşturacağı bir DB.
+      # Servisler kendi DB'lerini DATABASE_URL ile hedefleyecek.
+      # İsterseniz buraya POSTGRES_USER adında bir DB de oluşturtabilirsiniz.
+      POSTGRES_DB: ${POSTGRES_USER} 
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      USER_SERVICE_DB_NAME: ${USER_SERVICE_DB_NAME}
+      PRODUCT_SERVICE_DB_NAME: ${PRODUCT_SERVICE_DB_NAME}
+      USER_SERVICE_DB_TEST_NAME: ${USER_SERVICE_DB_TEST_NAME}
+      PRODUCT_SERVICE_DB_TEST_NAME: ${PRODUCT_SERVICE_DB_TEST_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - "5433:5432" 
+    networks:
+      - app_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_USER}"] 
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  user_service_tests:
+    build:
+      context: ./user_service
+      dockerfile: Dockerfile.test
+    container_name: user_service_tester
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${USER_SERVICE_DB_TEST_NAME}
+      SECRET_KEY: ${USER_SERVICE_SECRET_KEY}
+      ALGORITHM: ${USER_SERVICE_ALGORITHM}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${USER_SERVICE_ACCESS_TOKEN_EXPIRE_MINUTES}
+      FIRST_SUPERUSER_USERNAME: ${FIRST_SUPERUSER_USERNAME} 
+      FIRST_SUPERUSER_PASSWORD: ${FIRST_SUPERUSER_PASSWORD}
+      FIRST_SUPERUSER_EMAIL: ${FIRST_SUPERUSER_EMAIL}
+      REDIS_HOST: ${USER_SERVICE_REDIS_HOST}
+      REDIS_PORT: ${USER_SERVICE_REDIS_PORT}
+      REDIS_BLACKLIST_DB: ${USER_SERVICE_REDIS_BLACKLIST_DB_TEST}
+      PYTHONUNBUFFERED: 1
+    networks:
+      - app_network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: ["pytest", "-vv", "-s", "/code/tests"]
+
+  product_service_tests:
+    build:
+      context: ./product_service
+      dockerfile: Dockerfile.test
+    container_name: product_service_tester
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${PRODUCT_SERVICE_DB_TEST_NAME}
+      SECRET_KEY: ${PRODUCT_SERVICE_SECRET_KEY}
+      ALGORITHM: ${PRODUCT_SERVICE_ALGORITHM}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${PRODUCT_SERVICE_ACCESS_TOKEN_EXPIRE_MINUTES}
+      PYTHONUNBUFFERED: 1
+    networks:
+      - app_network
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["pytest", "-vv", "-s", "/code/tests"]
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  app_network:
+    driver: bridge

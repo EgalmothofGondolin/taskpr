@@ -1,0 +1,48 @@
+# .gitignore
+# Python Sanal Ortamı
+venv/
+/venv/
+.venv/
+*/venv/
+*/.venv/
+
+# Hassas Ayarlar
+.env
+*.env
+
+# Python Cache ve Derlenmiş Dosyalar
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*$py.class
+
+# IDE ve Editör Dosyaları 
+.vscode/
+*.code-workspace
+
+# İşletim Sistemi Dosyaları 
+.DS_Store
+
+# Test Çıktıları ve Raporları
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Veritabanı Dosyaları 
+*.db
+
+# Log Dosyaları
+*.log
+
+# Build/Dist Artifacts
+build/
+dist/
+*.egg-info/

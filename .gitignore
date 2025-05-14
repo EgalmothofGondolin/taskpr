@@ -1,0 +1,60 @@
+# Kök .gitignore
+
+# İşletim Sistemi ve IDE Dosyaları
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+*.manifest
+*.spec
+
+
+# Asıl .env dosyası 
+.env
+
+# Docker Compose cache/config dosyaları 
+.docker/
+
+# Build context upload dosyaları
+.dockerignore-context-*
+
+# Test Raporları ve Cache
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+nosetests.xml
+pytestdebug.log
+
+*.log
+logs/
+
+# Geçici veya build dosyaları
+temp/
+tmp/
+output/
+target/
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints
+
+# Eclipse
+.classpath
+.project
+.settings/
+# NetBeans
+nbproject/
