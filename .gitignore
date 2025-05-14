@@ -23,7 +23,7 @@ build/
 *.spec
 
 
-# Asıl .env dosyası 
+# .env dosyası 
 .env
 
 # Docker Compose cache/config dosyaları 
